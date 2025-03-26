@@ -33,7 +33,7 @@ mongoose.connect(process.env.MONGO_DB_URI)
 app.use(cookieParser());
 
 app.use(cors({
-    origin: process.env.CLIENT_URL,
+    origin: "*",
     credentials: true
 }));
 
@@ -43,14 +43,15 @@ app.use(express.urlencoded({ extended: true }));
 
 // Route Handlers
 app.get('/', (req, res) => {
-    res.send('This is the homepage!');
+    console.log(process.env.CLIENT_URL)
+    res.send(`The client url is: ${process.env.CLIENT_URL}`);
 });
 
 
 // **🔌 Setup Socket.IO**
 const io = new Server(server, {
     cors: {
-        origin: process.env.CLIENT_URL,
+        origin: "*",
         methods: ["GET", "POST"]
     }
 });
