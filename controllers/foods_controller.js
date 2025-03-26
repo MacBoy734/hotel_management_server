@@ -59,7 +59,9 @@ const sendEmail = async (to, subject, message) => {
   // get all foods
   module.exports.allFoodsGet = async (req, res) => {
     try {
+      console.log("foods route hit!")
       const foods = await Food.find({quantity: { $gt: 0 }})
+      console.log(foods)
       res.status(200).json(foods)
     } catch (err) {
       res.status(500).json({ error: err.message })
