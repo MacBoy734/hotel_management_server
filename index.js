@@ -18,9 +18,10 @@ events.EventEmitter.defaultMaxListeners = 20;
 //RATE LIMITING MIDDLEWARE
 const limiter = rateLimit({
     windowMs: 10 * 60 * 1000,
-    max: 150, 
+    max: 150,
     message: 'Too many requests from this IP, please try again after 10 minutes',
     statusCode: 429,
+    skip: (req) => req.path.startsWith("/socket.io"),
 });
 
 app.use(limiter);
@@ -30,12 +31,12 @@ mongoose.connect(process.env.MONGO_DB_URI)
     .then(() => console.log('Connected to database...'))
     .catch(error => console.error(error.message));
 
-app.use(cookieParser());
-
 app.use(cors({
-    origin: "*",
+    origin: process.env.CLIENT_URL,
     credentials: true
 }));
+app.use(cookieParser());
+
 
 
 app.use(express.json());
@@ -51,7 +52,7 @@ app.get('/', (req, res) => {
 // **🔌 Setup Socket.IO**
 const io = new Server(server, {
     cors: {
-        origin: "*",
+        origin: process.env.CLIENT_URL,
         methods: ["GET", "POST"]
     }
 });
@@ -60,7 +61,7 @@ const io = new Server(server, {
 app.use((req, res, next) => {
     req.io = io;
     next();
-  })
+})
 
 // **🌍 WebSocket Events**
 io.on("connection", (socket) => {

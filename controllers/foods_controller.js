@@ -276,8 +276,8 @@ module.exports.editOrderPatch = async (req, res) => {
       if (!item || item === null) {
         res.status(404).json({ error: 'the food was not found' })
       } else {
-        const { offers, name, description, price, category, quantity, isFeatured } = req.body
-        const updatedFood = await food.findByIdAndUpdate(item._id, { $set: { name, description, price, category, quantity, isFeatured, offers } }, { new: true })
+        const { name, description, price, category, quantity, isAvailable } = req.body
+        const updatedFood = await food.findByIdAndUpdate(item._id, { $set: { name, description, price, category, quantity, isAvailable } }, { new: true })
         req.io.emit("foodUpdated", { action: "edit", food: updatedFood })
         res.status(200).json({ message: 'food updated succesfully' })
       }
