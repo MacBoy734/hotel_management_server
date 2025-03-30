@@ -176,8 +176,11 @@ module.exports.addFoodsPost = [
   // checkout route
 
 module.exports.checkOutPost = async (req, res) => {
-    const { userId, items, address, postalCode, city, email, paymentMethod, phone } = req.body;
+    const { userId, items, email, paymentMethod, phone } = req.body;
     try {
+      if(!userId || !items || !email || !paymentMethod || !phone){
+        return res.status(400).json({error: "Please include all details!"})
+      }
       const user = await User.findById(userId);
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
@@ -190,7 +193,7 @@ module.exports.checkOutPost = async (req, res) => {
       for (let item of items) {
         const food = await Food.findById(item.id);
         if (!food) {
-          return res.status(404).json({ error: `Food with ID ${item.id} not found` });
+          return res.status(404).json({ error: `Food with name ${food.name} not found` });
         }
   
         // Calculate price and update stock
@@ -212,7 +215,6 @@ module.exports.checkOutPost = async (req, res) => {
         user: user._id,
         items: orderItems,
         totalAmount,
-        shippingAddress: address,
         paymentMethod,
         email,
         paymentStatus: 'Pending',
@@ -232,9 +234,7 @@ module.exports.checkOutPost = async (req, res) => {
       <p>Total: $${order.totalAmount}</p>
       <p>Date: ${new Date(order.createdAt).toLocaleString()}</p>
       <p>Payment method: ${order.paymentMethod}</p>
-      <p>shipping address: ${order.shippingAddress}</p>
-      <p>city of delivery: ${order.city}</p>
-      <p>We will notify you when it's shipped.</p>
+      <p>We will deliver the food to you.</p>
     `;
       await sendEmail(user.email, "Order Confirmation", userMessage);
   
@@ -242,6 +242,7 @@ module.exports.checkOutPost = async (req, res) => {
       const adminMessage = `
       <h2>New Order Received</h2>
       <p>User: ${user.username} (${email})</p>
+      <p>Phone Number: ${phone}</p>
       <p>Order ID: ${order._id}</p>
       <p>Total: $${order.totalAmount}</p>
       <p>city of delivery: ${order.city}</p>
@@ -255,6 +256,31 @@ module.exports.checkOutPost = async (req, res) => {
     }
   }
 
+
+// route to validate cart items
+module.exports.validateCartPost = async (req, res) => {
+  try{
+    const {items} = req.body
+    if(!items || items.length <= 0){
+      return res.status(400).json({error: "cart items can't be empty!"})
+    }else{
+      const unavailableItems = [];
+      for (const item of items) {
+        const food = await Food.findById(item.id);
+        if (!food || food.quantity < item.quantity || !food.isAvailable) {
+          unavailableItems.push({ name: food?.name , id: food._id });
+        }
+      }
+      if (unavailableItems.length > 0) {
+        return res.status(400).json({ unavailableItems });
+      }else{
+        return res.status(200).json({message: "all cart items are available"})
+      }
+    }
+  }catch(err){
+    res.status(500).json({error: err.message})
+  }
+}
 //   PATCH / PUT ROUTES
 module.exports.editOrderPatch = async (req, res) => {
     try {

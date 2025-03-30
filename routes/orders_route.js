@@ -9,7 +9,7 @@ router.get('/', authenticateUser, checkIfIsAdmin, allOrdersGet)
 
 
 // PUT / PATCH ROUTES
-router.patch('/editoffer/:id', authenticateUser, checkIfIsAdmin, editOrderPatch)
+router.patch('/editorder/:id', authenticateUser, checkIfIsAdmin, editOrderPatch)
 
 // DELETE ROUTES
 router.delete('/deleteorder/:id', authenticateUser, checkIfIsAdmin, deleteOrderDelete)

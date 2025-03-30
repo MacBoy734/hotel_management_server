@@ -1,6 +1,6 @@
 const express = require('express')
 const {authenticateUser, checkIfIsAdmin} = require('../middleware/auth')
-const { addFoodsPost, allFoodsGet, foodGet, editFoodPatch, deleteFoodDelete, searchFoodsGet, checkOutPost, allOrdersGet, editOrderPatch, deleteOrderDelete } = require('../controllers/foods_controller')
+const { addFoodsPost, allFoodsGet, foodGet, editFoodPatch, deleteFoodDelete, searchFoodsGet, checkOutPost, allOrdersGet, editOrderPatch, deleteOrderDelete, validateCartPost } = require('../controllers/foods_controller')
 
 const router = express.Router()
 
@@ -14,6 +14,7 @@ router.get('/:id', foodGet)
 // POST ROUTES
 router.post('/addfood', authenticateUser, checkIfIsAdmin, addFoodsPost)
 router.post('/checkout', authenticateUser, checkOutPost)
+router.post('/validatecart', validateCartPost)
 
 // PUT/PATCH ROUTES
 router.patch('/editfood/:id', authenticateUser, checkIfIsAdmin, editFoodPatch)

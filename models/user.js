@@ -1,5 +1,6 @@
 const mongoose = require ('mongoose')
 const bcrypt = require ('bcryptjs')
+const Order = require('./order')
 
 const { Schema } = mongoose
 
@@ -29,7 +30,7 @@ const userSchema = new Schema({
     type: Number,
     required: [true, 'please enter phone number!']
   }, 
-  orderHistory: {type: Array, default: []}
+  orderHistory: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Order', required: true }]
 }, {timestamps: true})
 
 // HASHING THE PASSWORD BEFORE SAVING

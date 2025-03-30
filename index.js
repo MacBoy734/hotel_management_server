@@ -32,7 +32,7 @@ mongoose.connect(process.env.MONGO_DB_URI)
     .catch(error => console.error(error.message));
 
 app.use(cors({
-    origin: "*",
+    origin: process.env.CLIENT_URL,
     credentials: true
 }));
 app.use(cookieParser());
@@ -52,7 +52,7 @@ app.get('/', (req, res) => {
 // **🔌 Setup Socket.IO**
 const io = new Server(server, {
     cors: {
-        origin: "*",
+        origin: process.env.CLIENT_URL,
         methods: ["GET", "POST"]
     }
 });

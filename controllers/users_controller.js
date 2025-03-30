@@ -1,9 +1,11 @@
 const jwt = require('jsonwebtoken')
 const User = require('../models/user')
+const Food = require('../models/food')
 const Order = require('../models/order')
 const Newsletter = require('../models/newsletter')
 const nodemailer = require('nodemailer')
 const { body, validationResult } = require('express-validator')
+const newsletter = require('../models/newsletter')
 
 
 // CREATE TOKEN FUNCTION
@@ -58,7 +60,6 @@ module.exports.changeRoleGet = async (req, res) => {
 module.exports.userOrdersGet = async (req, res) => {
     try {
         const { id } = req.params
-        console.log(id)
         if (!id) {
             return res.status(400).json({ error: 'please include the id!' })
         }
@@ -66,8 +67,7 @@ module.exports.userOrdersGet = async (req, res) => {
         if (!user) {
             return res.status(404).json({ error: 'the user was not found' })
         } else {
-            userOrders = await User.findById(user._id).select('orderHistory').populate({ path: 'orderHistory', select: '-updatedAt -user -shippingAddress -email' })
-            console.log(userOrders)
+            userOrders = await User.findById(user._id).select('orderHistory').populate({ path: 'orderHistory', select: '-updatedAt -user -email' })
             res.status(200).json(userOrders)
         }
     } catch (err) {
@@ -79,7 +79,49 @@ module.exports.siteDetailsGet = async (req, res) => {
     try{
       const totalCustomers = await User.countDocuments()
       const totalOrders = await Order.countDocuments()
-      res.status(200).json({totalCustomers, totalOrders})
+      const newsletterUsers = await newsletter.countDocuments()
+      const totalUsers = await User.countDocuments()
+      const totalFoods = await Food.countDocuments()
+      const revenue = await Order.aggregate([
+        { $match: { paymentStatus: "Paid" } }, 
+        { $group: { _id: null, totalRevenue: { $sum: "$totalAmount" } } } 
+      ])
+      const totalRevenue = revenue.length > 0 ? revenue[0].totalRevenue : 0
+      const monthlyRevenue = await Order.aggregate([
+        { $match: { paymentStatus: "Paid" } }, 
+        {
+          $group: {
+            _id: { $month: "$createdAt" }, // Group by month (1 = Jan, 2 = Feb, etc.)
+            sales: { $sum: "$totalAmount" } // Sum up totalAmount for each month
+          }
+        },
+        { $sort: { "_id": 1 } }, // Sort by month (Jan -> Dec)
+        {
+          $project: {
+            _id: 0, // Hide _id field
+            name: {
+              $arrayElemAt: [
+                [
+                  "", "Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+                  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+                ],
+                "$_id"
+              ]
+            },
+            sales: 1
+          }
+        }
+      ])
+      const allMonths = [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+      ];
+      
+      const formattedRevenue = allMonths.map((month) => {
+        const found = monthlyRevenue.find((data) => data.name === month);
+        return found || { name: month, sales: 0 }
+      })
+      console.log(formattedRevenue)
+      res.status(200).json({totalCustomers, totalOrders, newsletterUsers, totalUsers, totalFoods, formattedRevenue, totalRevenue})
     }catch(err){
         res.status(500).json({error: err.message})
     }

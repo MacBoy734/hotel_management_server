@@ -13,7 +13,6 @@ const orderSchema = new mongoose.Schema({
     }
   ],
   totalAmount: { type: Number, required: true },
-  shippingAddress: { type: String, required: true },
   email: {type: String, required: true},
   paymentMethod: {type: String, required: true},
   paymentStatus: { type: String, enum: ['Pending', 'Paid', 'Failed'], default: 'Pending' },
