@@ -315,8 +315,8 @@ module.exports.sendNewsletterPost = async (req, res) => {
         } else {
             return res.status(400).json({ error: 'there is no enough users!' })
         }
-    } catch (error) {
-        res.status(500).json({ error: "Failed to send the newsletter." });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 }
 
