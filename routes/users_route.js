@@ -1,10 +1,10 @@
 const express = require('express')
 const router = express.Router()
-const {authenticateUser, checkIfIsAdmin} = require('../middleware/auth')
+const {authenticateUser, checkIfIsAdmin, authenticateAdmin} = require('../middleware/auth')
 const {registerPost, loginPost, allUsersGet, changeRoleGet, newsletterPost, userOrdersGet, forgotPasswordPost, resetPasswordPost, siteDetailsGet, logoutGet} = require('../controllers/users_controller')
 
 // GET ROUTES
-router.get('/', authenticateUser, checkIfIsAdmin, allUsersGet)
+router.get('/', authenticateUser, checkIfIsAdmin, authenticateAdmin, allUsersGet)
 router.get('/logout', logoutGet)
 router.get('/:id/orders', authenticateUser, userOrdersGet)
 router.get('/:id/edit', authenticateUser, checkIfIsAdmin, changeRoleGet)

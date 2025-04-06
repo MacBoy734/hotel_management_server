@@ -76,54 +76,53 @@ module.exports.userOrdersGet = async (req, res) => {
 }
 
 module.exports.siteDetailsGet = async (req, res) => {
-    try{
-      const totalCustomers = await User.countDocuments()
-      const totalOrders = await Order.countDocuments()
-      const newsletterUsers = await newsletter.countDocuments()
-      const totalUsers = await User.countDocuments()
-      const totalFoods = await Food.countDocuments()
-      const revenue = await Order.aggregate([
-        { $match: { paymentStatus: "Paid" } }, 
-        { $group: { _id: null, totalRevenue: { $sum: "$totalAmount" } } } 
-      ])
-      const totalRevenue = revenue.length > 0 ? revenue[0].totalRevenue : 0
-      const monthlyRevenue = await Order.aggregate([
-        { $match: { paymentStatus: "Paid" } }, 
-        {
-          $group: {
-            _id: { $month: "$createdAt" }, // Group by month (1 = Jan, 2 = Feb, etc.)
-            sales: { $sum: "$totalAmount" } // Sum up totalAmount for each month
-          }
-        },
-        { $sort: { "_id": 1 } }, // Sort by month (Jan -> Dec)
-        {
-          $project: {
-            _id: 0, // Hide _id field
-            name: {
-              $arrayElemAt: [
-                [
-                  "", "Jan", "Feb", "Mar", "Apr", "May", "Jun", 
-                  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-                ],
-                "$_id"
-              ]
+    try {
+        const totalCustomers = await User.countDocuments()
+        const totalOrders = await Order.countDocuments()
+        const newsletterUsers = await newsletter.countDocuments()
+        const totalUsers = await User.countDocuments()
+        const totalFoods = await Food.countDocuments()
+        const revenue = await Order.aggregate([
+            { $match: { paymentStatus: "Paid" } },
+            { $group: { _id: null, totalRevenue: { $sum: "$totalAmount" } } }
+        ])
+        const totalRevenue = revenue.length > 0 ? revenue[0].totalRevenue : 0
+        const monthlyRevenue = await Order.aggregate([
+            { $match: { paymentStatus: "Paid" } },
+            {
+                $group: {
+                    _id: { $month: "$createdAt" }, // Group by month (1 = Jan, 2 = Feb, etc.)
+                    sales: { $sum: "$totalAmount" } // Sum up totalAmount for each month
+                }
             },
-            sales: 1
-          }
-        }
-      ])
-      const allMonths = [
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-      ];
-      
-      const formattedRevenue = allMonths.map((month) => {
-        const found = monthlyRevenue.find((data) => data.name === month);
-        return found || { name: month, sales: 0 }
-      })
-      console.log(formattedRevenue)
-      res.status(200).json({totalCustomers, totalOrders, newsletterUsers, totalUsers, totalFoods, formattedRevenue, totalRevenue})
-    }catch(err){
-        res.status(500).json({error: err.message})
+            { $sort: { "_id": 1 } }, // Sort by month (Jan -> Dec)
+            {
+                $project: {
+                    _id: 0, // Hide _id field
+                    name: {
+                        $arrayElemAt: [
+                            [
+                                "", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+                            ],
+                            "$_id"
+                        ]
+                    },
+                    sales: 1
+                }
+            }
+        ])
+        const allMonths = [
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        ];
+
+        const formattedRevenue = allMonths.map((month) => {
+            const found = monthlyRevenue.find((data) => data.name === month);
+            return found || { name: month, sales: 0 }
+        })
+        res.status(200).json({ totalCustomers, totalOrders, newsletterUsers, totalUsers, totalFoods, formattedRevenue, totalRevenue })
+    } catch (err) {
+        res.status(500).json({ error: err.message })
     }
 }
 
@@ -141,18 +140,23 @@ module.exports.loginPost = [
         }
         try {
             let { username, password } = req.body
+            if (!username || !password) return res.status(400).json({ error: "please include all details!" })
             const user = await User.login(username, password)
-            let token = createtoken(user._id, user.username, user.isAdmin)
-            res.cookie('jwt', token, {
-                maxAge: 3600000 * 120,
-                httpOnly: true,
-                sameSite: "none",
-                secure: process.env.IS_PRODUCTION,
-                path: '/'
-            })
-            if (user) res.status(200).json(user)
+            if (user) {
+                let token = createtoken(user._id, user.username, user.isAdmin)
+                res.cookie('jwt', token, {
+                    maxAge: 3600000 * 120,
+                    httpOnly: true,
+                    sameSite: "none",
+                    secure: process.env.IS_PRODUCTION,
+                    path: '/'
+                })
+                res.status(200).json(user)
+            } else {
+                res.status(404).json({ error: "The user was not found!" })
+            }
         } catch (err) {
-            res.status(401).json({ error: err.message })
+            res.status(500).json({ error: err.message })
         }
     }]
 
@@ -239,7 +243,7 @@ module.exports.registerPost = [
             </div>
         </div>
         `
-    }
+            }
 
 
             transporter.sendMail(mailOptions, (error, Info) => {
@@ -313,7 +317,7 @@ module.exports.sendNewsletterPost = async (req, res) => {
             );
             res.status(200).json({ message: "Newsletter sent successfully!" });
         } else {
-            return res.status(400).json({ error: 'there is no enough users!' })
+            return res.status(400).json({ error: 'there are no enough users!' })
         }
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -326,7 +330,7 @@ module.exports.forgotPasswordPost = async (req, res) => {
         const user = await User.findOne({ email })
         if (!user) return res.status(404).json({ error: 'this email is not registered!' })
         const token = jwt.sign({ id: user._id }, process.env.JWT_COOKIE_SECRET, { expiresIn: '10m' })
-        const resetUrl = `https://${process.env.CLIENT_URL}/auth/resetpassword?token=${token}`
+        const resetUrl = `${process.env.CLIENT_URL}/auth/resetpassword?token=${token}`
         const transporter = nodemailer.createTransport({
             host: "smtp.gmail.com",
             port: 587,
@@ -348,7 +352,7 @@ module.exports.forgotPasswordPost = async (req, res) => {
                 <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; padding: 20px; background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 8px;">
                     <h2 style="color: #0275d8; text-align: center;">Reset Your Password</h2>
                     <p>Hello ${user.username},</p>
-                    <p>Hey We are so sorry that you lost your password. Click the button below to reset your password. <strong>This link will expire in 10 minutes.</strong></p>
+                    <p>Hey We are so sorry that you lost your password. Click the button below to reset your password. <strong>Please note that this link will expire in 10 minutes!</strong></p>
                     <div style="text-align: center; margin: 20px 0;">
                         <a href="${resetUrl}" style="background-color: #0275d8; color: #fff; padding: 10px 20px; text-decoration: none; font-weight: bold; border-radius: 5px;">
                             Reset Password
@@ -365,7 +369,7 @@ module.exports.forgotPasswordPost = async (req, res) => {
                     <br>
                     <small>This is an automated response! Please don't reply to this email.</small>
                     <br>
-                    <p style="font-size: 0.9rem; color: #666;">Thank you,<br>The Eatery Team</p>
+                    <p style="font-size: 0.9rem; color: #666;">Thank you,<br>The Local Eatery Team</p>
                 </div>
             `
 

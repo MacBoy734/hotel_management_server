@@ -186,8 +186,10 @@ module.exports.checkOutPost = async (req, res) => {
       return res.status(400).json({ error: "Please include all details!" });
     }
 
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).session(session);
     if (!user) {
+      await session.abortTransaction(); 
+      session.endSession();
       return res.status(404).json({ error: "User not found" });
     }
 
@@ -369,20 +371,6 @@ module.exports.validateCartPost = async (req, res) => {
   }
 }
 //   PATCH / PUT ROUTES
-module.exports.editOrderPatch = async (req, res) => {
-  try {
-    const item = await Order.findById(req.params.id)
-    if (!item || item === null) {
-      res.status(404).json({ error: 'the order was not found' })
-    } else {
-      const { paymentStatus, orderStatus } = req.body
-      const updatedOrder = await Order.findByIdAndUpdate(item._id, { $set: { orderStatus, paymentStatus } }, { new: true })
-      res.status(200).json(updatedOrder)
-    }
-  } catch (err) {
-    res.status(500).json({ error: err.message })
-  }
-}
 module.exports.editFoodPatch = async (req, res) => {
   try {
     const item = await Food.findById(req.params.id)
@@ -406,23 +394,9 @@ module.exports.deleteFoodDelete = async (req, res) => {
     if (item !== null) {
       await Food.findByIdAndDelete({ _id: item._id })
       req.io.emit("foodUpdated", { action: "delete", foodId: item._id })
-      res.status(204).json({ message: 'food deleted succesfully!' })
+      return res.status(204).json({ message: 'food deleted succesfully!' })
     } else {
-      res.status(404).json({ error: 'oops the food was not found!' })
-    }
-  } catch (error) {
-    res.status(500).json({ error: error.message })
-  }
-}
-
-module.exports.deleteOrderDelete = async (req, res) => {
-  try {
-    const item = await Order.findById(req.params.id)
-    if (item !== null) {
-      await Order.findByIdAndDelete(item._id)
-      res.status(204).json({ message: 'order deleted succesfully!' })
-    } else {
-      res.status(404).json({ error: 'oops the order was not found!' })
+      return res.status(404).json({ error: 'oops the food was not found!' })
     }
   } catch (error) {
     res.status(500).json({ error: error.message })

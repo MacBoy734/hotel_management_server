@@ -19,7 +19,7 @@ module.exports.editOrderPatch = async (req, res) => {
       } else {
         const { paymentStatus, orderStatus} = req.body
         const updatedOrder = await Order.findByIdAndUpdate(item._id, { $set: { orderStatus, paymentStatus } }, { new: true })
-        res.status(200).json(updatedOrder)
+        return res.status(200).json(updatedOrder)
       }
     } catch (err) {
       res.status(500).json({ error: err.message })
@@ -31,7 +31,7 @@ module.exports.editOrderPatch = async (req, res) => {
       const item = await Order.findById(req.params.id)
       if (item !== null) {
         await Order.findByIdAndDelete(item._id)
-        res.status(204).json({ message: 'order deleted succesfully!' })
+        return res.status(204).json({ message: 'order deleted succesfully!' })
       } else {
         res.status(404).json({ error: 'oops the order was not found!' })
       }

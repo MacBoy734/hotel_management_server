@@ -44,7 +44,6 @@ app.use(express.urlencoded({ extended: true }));
 
 // Route Handlers
 app.get('/', (req, res) => {
-    console.log(process.env.CLIENT_URL)
     res.send(`The client url is: ${process.env.CLIENT_URL}`);
 });
 
