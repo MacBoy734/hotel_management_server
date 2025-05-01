@@ -62,7 +62,7 @@ const io = new Server(server, {
 
 const PING_URL = 'https://hotel-management-server-by1x.onrender.com'
 
-if (process.env.IS_PRODUCTION) {
+if (process.env.IS_PRODUCTION == true) {
     cron.schedule('*/14 * * * *', () => {
         https.get(PING_URL, (res) => {
             console.log(`pinged server: ${res.statusCode}`);
