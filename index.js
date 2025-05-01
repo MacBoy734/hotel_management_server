@@ -4,6 +4,8 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const { Server } = require("socket.io");
+const cron = require('node-cron')
+const https = require('https')
 const http = require("http");
 
 require('dotenv').config();
@@ -55,6 +57,20 @@ const io = new Server(server, {
         methods: ["GET", "POST"]
     }
 });
+
+// HITTING THE URI AFTER EVERY 14 MINUTES TO KEEP THE SERVER ACTIVE
+
+const PING_URL = 'https://hotel-management-server-by1x.onrender.com'
+
+if (process.env.IS_PRODUCTION) {
+    cron.schedule('*/14 * * * *', () => {
+        https.get(PING_URL, (res) => {
+            console.log(`pinged server: ${res.statusCode}`);
+        }).on('error', (err) => {
+            console.error('Ping error:', err.message);
+        });
+    })
+}
 
 // Middleware to attach `io` to `req`
 app.use((req, res, next) => {
